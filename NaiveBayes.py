@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from ConfusionMatrix_Iris import ConfusionMatrix
 
 
 def separate_classes(data):
@@ -129,6 +132,8 @@ def predict(y, y_true, classes):
 
 
 if __name__ == "__main__":
+    confusion_matrix = True
+
     # import the data
     df = pd.read_csv("iris.csv")
 
@@ -139,7 +144,6 @@ if __name__ == "__main__":
 
     # splitting the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.2, random_state=1)
-    print(y_train.shape)
     update_data = np.column_stack((X_train, y_train))
 
     # separate classes
@@ -156,5 +160,41 @@ if __name__ == "__main__":
     # predict
     prediction, accuracy = predict(y_probability, y_test, classes_all)
 
-    print("prediction:\n", prediction)
-    print("Accuracy: {}%".format(round(accuracy * 100, 2)))
+    # plotting the confusion matrix
+    if confusion_matrix:
+        Confusion_Matrix_Calculate = ConfusionMatrix(y_test, prediction, classes_all)
+        Confusion_Matrix, Result_Data, Dimensions = Confusion_Matrix_Calculate.Calculate_Confusion_Matrix()
+        plt.figure(1, figsize=(8, 6))
+        df_confusion_matrix = pd.DataFrame(Confusion_Matrix, range(Dimensions), range(Dimensions))
+        sns.set(font_scale=1)
+        sns.heatmap(df_confusion_matrix,
+                    annot=True, annot_kws={"size": 10}, fmt="1.0f", xticklabels=classes_all, yticklabels=classes_all)
+        plt.title("Confusion Matrix", fontsize=20)
+        plt.xlabel("Predicted")
+        plt.ylabel("Actual")
+
+        # Displaying table of accuracy, precision, recall, and f1-score
+        plt.figure(2, figsize=(8, 4))
+        plt.title('Performance Table', fontsize=20)
+        plt.axis('off')
+
+        columns = Result_Data.columns.tolist()
+        rows = Result_Data.index.tolist()
+
+        info_table = plt.table(cellText=Result_Data.values,
+                               rowLabels=rows,
+                               colLabels=columns,
+                               bbox=[0, 0, 1, 1],
+                               loc='upper right')
+        # changing colours withing table to make more appealing
+        for cell, cell_info in info_table._cells.items():
+            cell_info.set_edgecolor('w')
+            if cell[0] == 0:
+                cell_info.set_text_props(color='w')
+                cell_info.set_facecolor('#40466e')
+            else:
+                cell_info.set_facecolor(['#f1f1f2', 'w'][cell[0] % 2])
+
+    print("Total Accuracy: {}%".format(round(accuracy * 100, 2)))
+
+    plt.show()
